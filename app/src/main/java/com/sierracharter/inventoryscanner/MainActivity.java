@@ -25,6 +25,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.preference.PreferenceManager;
 
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -42,6 +43,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -105,6 +108,7 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
 
     public void onScanButtonPressed(View view){
         IntentIntegrator intentIntegrator = new IntentIntegrator(this);
+        intentIntegrator.setOrientationLocked(false);
         intentIntegrator.initiateScan();
     }
 
@@ -112,6 +116,9 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+        if(data == null){
+            return;
+        }
         IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
 
         if(result != null){
