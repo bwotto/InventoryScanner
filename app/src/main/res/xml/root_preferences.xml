@@ -1,0 +1,51 @@
+<!--
+  ~ Copyright 2018 The app Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="Network Location">
+
+        <EditTextPreference
+            app:key="host"
+            app:title="Host"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:key="share"
+            app:title="Share"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:key="file_path"
+            app:title="File path"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Credentials">
+        <EditTextPreference
+            app:key="domain"
+            app:title="Domain"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:key="username"
+            app:title="Username"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:key="passsword"
+            app:title="Password"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+
+</androidx.preference.PreferenceScreen>
