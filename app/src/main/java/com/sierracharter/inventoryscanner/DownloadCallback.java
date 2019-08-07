@@ -2,7 +2,7 @@ package com.sierracharter.inventoryscanner;
 
 public interface DownloadCallback{
 
-    void onStartedSheetUpdate(Exception e);
+    void onStartedSheetUpdate(String result);
 
-    void onFinishedSheetUpdate(Exception e);
+    void onFinishedSheetUpdate(String result);
 }

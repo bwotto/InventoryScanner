@@ -13,6 +13,7 @@ import com.hierynomus.msdtyp.AccessMask;
 import com.hierynomus.msfscc.FileAttributes;
 import com.hierynomus.mssmb2.SMB2CreateDisposition;
 import com.hierynomus.mssmb2.SMB2ShareAccess;
+import com.hierynomus.mssmb2.SMBApiException;
 import com.hierynomus.smbj.SMBClient;
 import com.hierynomus.smbj.auth.AuthenticationContext;
 import com.hierynomus.smbj.connection.Connection;
@@ -50,7 +51,7 @@ public class NetworkFragment extends Fragment {
      */
 
     public static NetworkFragment getInstance(FragmentManager supportFragmentManager) {
-        if(mNetworkFragment == null){
+        if (mNetworkFragment == null) {
             mNetworkFragment = new NetworkFragment();
             supportFragmentManager.beginTransaction().add(mNetworkFragment, TAG).commit();
         }
@@ -89,21 +90,21 @@ public class NetworkFragment extends Fragment {
         downloadTask.execute(mRoomNumber, assetNumber, host, share, filename, domain, username, password);
     }
 
-    private class DownloadTask extends AsyncTask<String, Void, Exception>{
+    private class DownloadTask extends AsyncTask<String, Void, String> {
 
         private boolean mRunning;
 
         @Override
         protected void onPreExecute() {
             Log.d("BENJI", "pre execute");
-            if(!mRunning){
+            if (!mRunning) {
                 mRunning = true;
             }
             mCallback.onStartedSheetUpdate(null);
         }
 
         @Override
-        protected Exception doInBackground(String... strings) {
+        protected String doInBackground(String... strings) {
             Log.d("BENJI", "do in background");
             String roomNumber = strings[0];
             String assetNumber = strings[1];
@@ -114,29 +115,27 @@ public class NetworkFragment extends Fragment {
             String username = strings[6];
             String password = strings[7];
 
-            Exception e = handleupdate(roomNumber, assetNumber, host, share, filename, domain, username, password);
+            String result = handleupdate(roomNumber, assetNumber, host, share, filename, domain, username, password);
 
-            return e;
+            return result;
         }
 
         @Override
-        protected void onPostExecute(Exception e) {
-            Log.d("BENJI", "On post execute");
+        protected void onPostExecute(String result) {
             mRunning = false;
-            mCallback.onFinishedSheetUpdate(e);
+            mCallback.onFinishedSheetUpdate(result);
         }
 
-        private Exception handleupdate(String roomNumber, String assetNumber, String host, String share, String filename, String domain, String username, String password){
+        private String handleupdate(String roomNumber, String assetNumber, String host, String share, String filename, String domain, String username, String password) {
+
             SMBClient client = new SMBClient();
             Log.d("BENJI", "created smb client");
             Exception exception = null;
 
-            try {
-
-                Connection connection = client.connect(host);
+            try (Connection connection = client.connect(host)) {
                 Session session = connection.authenticate(new AuthenticationContext(username, password.toCharArray(), domain));
 
-                DiskShare diskShare = (DiskShare)session.connectShare(share);
+                DiskShare diskShare = (DiskShare) session.connectShare(share);
                 Log.d("BENJI", "accessed disk share");
 
                 Set<AccessMask> accessMasks = new HashSet<>();
@@ -160,15 +159,15 @@ public class NetworkFragment extends Fragment {
 
                 Sheet sheet = workbook.getSheetAt(0);
 
-                for(Row row : sheet){
+                for (Row row : sheet) {
                     Cell cell = row.getCell(0, Row.RETURN_NULL_AND_BLANK);
 
-                    if(cell.getCellType() == Cell.CELL_TYPE_NUMERIC){
+                    if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
                         double assetNumberInSheet = cell.getNumericCellValue();
-                        double assetNumberFromScan =  Double.parseDouble(assetNumber);
+                        double assetNumberFromScan = Double.parseDouble(assetNumber);
 
                         //We found an matching asset number in the sheet.
-                        if(assetNumberFromScan == assetNumberInSheet){
+                        if (assetNumberFromScan == assetNumberInSheet) {
                             Log.d("BENJI", "Found matching asset number in sheet");
                             Cell cellRoom = row.getCell(2, Row.RETURN_NULL_AND_BLANK);
                             String roomNameInSheet = cellRoom.getStringCellValue();
@@ -177,12 +176,12 @@ public class NetworkFragment extends Fragment {
                             style.cloneStyleFrom(cell.getCellStyle());
                             style.setFillPattern(CellStyle.SOLID_FOREGROUND);
 
-                            if(roomNumber.toUpperCase().equals(roomNameInSheet.toUpperCase())){
+                            if (roomNumber.toUpperCase().equals(roomNameInSheet.toUpperCase())) {
                                 Log.d("BENJI", "We found the scanned item");
                                 style.setFillForegroundColor(IndexedColors.GREEN.getIndex());
                             }
                             //The item we scanned must be out of place.
-                            else{
+                            else {
                                 Log.d("BENJI", "The item we scanned is out of place");
                                 style.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
                             }
@@ -201,15 +200,14 @@ public class NetworkFragment extends Fragment {
                         }
                     }
                 }
+            }catch(SMBApiException e){
+                Log.e("BENJI", "File in use.");
+                return new String("File in use. Try again later.");
 
-            }catch(Exception e){
-                exception = e;
-                if(e != null) {
-                    Log.e("BENJI", e.getMessage());
-                }
+            }catch(IOException e){
+                return new String("Connection error.");
             }
-
-            return exception;
+            return new String("Success");
         }
     }
 }

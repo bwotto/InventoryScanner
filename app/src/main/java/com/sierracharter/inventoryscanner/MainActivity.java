@@ -152,21 +152,22 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
     }
 
     @Override
-    public void onStartedSheetUpdate(Exception e){
+    public void onStartedSheetUpdate(String result){
         ProgressBar bar = findViewById(R.id.progressBar);
         bar.setVisibility(View.VISIBLE);
-        if(e != null) {
-            Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+
+        if(result != null && !result.equals("Success")){
+            Toast.makeText(this, result, Toast.LENGTH_LONG).show();
         }
     }
 
     @Override
-    public void onFinishedSheetUpdate(Exception e){
+    public void onFinishedSheetUpdate(String result){
         ProgressBar bar = findViewById(R.id.progressBar);
         bar.setVisibility(View.INVISIBLE);
-        if(e != null) {
-            Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
-            Toast.makeText(this, e.toString(), Toast.LENGTH_SHORT).show();
+
+        if(result != null && !result.equals("Success")){
+            Toast.makeText(this, result, Toast.LENGTH_LONG).show();
         }
     }
 }
