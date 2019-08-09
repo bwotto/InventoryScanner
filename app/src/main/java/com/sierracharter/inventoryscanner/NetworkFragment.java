@@ -57,7 +57,9 @@ public class NetworkFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        mCallback = (DownloadCallback) context;
+        if(context instanceof MainActivity) {
+            mCallback = (DownloadCallback) context;
+        }
     }
 
     @Override

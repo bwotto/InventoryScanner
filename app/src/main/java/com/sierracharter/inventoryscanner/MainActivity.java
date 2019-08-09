@@ -111,7 +111,6 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
                 if(scanContents.matches("[0-9]+")){
                     if(mRoomNumber.equals("")){
                         showMessage("Scan a room number first");
-                        Snackbar.make(findViewById(android.R.id.content), "Scan room first", Snackbar.LENGTH_LONG);
                     }
                     //Time to update sheet.
                     startUpdateSheet(mRoomNumber, scanContents, host, share, filePath, domain, username, password);
@@ -145,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
         ProgressBar bar = findViewById(R.id.progressBar);
         bar.setVisibility(View.INVISIBLE);
 
-        if(result != null){
+        if(result != null && !equals("")){
             showMessage(result);
         }
     }
