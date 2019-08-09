@@ -7,17 +7,6 @@ import android.os.Bundle;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
-import com.hierynomus.msdtyp.AccessMask;
-import com.hierynomus.msfscc.FileAttributes;
-import com.hierynomus.mssmb2.SMB2CreateDisposition;
-import com.hierynomus.mssmb2.SMB2CreateOptions;
-import com.hierynomus.mssmb2.SMB2ShareAccess;
-import com.hierynomus.smbj.SMBClient;
-import com.hierynomus.smbj.auth.AuthenticationContext;
-import com.hierynomus.smbj.connection.Connection;
-import com.hierynomus.smbj.session.Session;
-import com.hierynomus.smbj.share.DiskShare;
-import com.hierynomus.smbj.share.File;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -137,6 +126,9 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
 
                 //The contents is a number.
                 if(scanContents.matches("[0-9]+")){
+                    if(mRoomNumber.equals("")){
+                        Toast.makeText(this, "Scan a room number first", Toast.LENGTH_LONG).show();
+                    }
                     //Time to update sheet.
                     startUpdateSheet(mRoomNumber, scanContents, host, share, filePath, domain, username, password);
                 }
@@ -173,7 +165,7 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
         ProgressBar bar = findViewById(R.id.progressBar);
         bar.setVisibility(View.INVISIBLE);
 
-        if(result != null && !result.equals("Success")){
+        if(result != null){
             Toast.makeText(this, result, Toast.LENGTH_LONG).show();
         }
     }

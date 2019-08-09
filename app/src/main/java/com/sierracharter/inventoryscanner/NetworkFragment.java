@@ -9,18 +9,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
-import com.hierynomus.msdtyp.AccessMask;
-import com.hierynomus.msfscc.FileAttributes;
-import com.hierynomus.mssmb2.SMB2CreateDisposition;
-import com.hierynomus.mssmb2.SMB2ShareAccess;
-import com.hierynomus.mssmb2.SMBApiException;
-import com.hierynomus.smbj.SMBClient;
-import com.hierynomus.smbj.auth.AuthenticationContext;
-import com.hierynomus.smbj.connection.Connection;
-import com.hierynomus.smbj.session.Session;
-import com.hierynomus.smbj.share.DiskShare;
-import com.hierynomus.smbj.share.File;
-
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -32,10 +20,14 @@ import org.apache.poi.ss.usermodel.Workbook;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.HashSet;
-import java.util.Set;
+import java.net.MalformedURLException;
+
+import jcifs.CIFSContext;
+import jcifs.context.SingletonContext;
+import jcifs.smb.NtlmPasswordAuthenticator;
+import jcifs.smb.SmbException;
+import jcifs.smb.SmbFile;
+import jcifs.smb.SmbFileInputStream;
 
 public class NetworkFragment extends Fragment {
     public static final String TAG = "NetworkFragment";
@@ -102,7 +94,10 @@ public class NetworkFragment extends Fragment {
             if (!mRunning) {
                 mRunning = true;
             }
-            mCallback.onStartedSheetUpdate(null);
+
+            if(mCallback != null) {
+                mCallback.onStartedSheetUpdate(null);
+            }
         }
 
         @Override
@@ -125,91 +120,106 @@ public class NetworkFragment extends Fragment {
         @Override
         protected void onPostExecute(String result) {
             mRunning = false;
-            mCallback.onFinishedSheetUpdate(result);
+            if(mCallback != null) {
+                mCallback.onFinishedSheetUpdate(result);
+            }
         }
 
         private String handleupdate(String roomNumber, String assetNumber, String host, String share, String filename, String domain, String username, String password) {
 
-            SMBClient client = new SMBClient();
-            Log.d("BENJI", "created smb client");
-            Exception exception = null;
+            CIFSContext baseContext = SingletonContext.getInstance();
+            CIFSContext context = baseContext.withCredentials(new NtlmPasswordAuthenticator(domain, username, password));
 
-            try (Connection connection = client.connect(host)) {
-                Session session = connection.authenticate(new AuthenticationContext(username, password.toCharArray(), domain));
+            String url = "smb://" + host + "/" + share + "/" + filename;
 
-                DiskShare diskShare = (DiskShare) session.connectShare(share);
-                Log.d("BENJI", "accessed disk share");
+            String message = "";
 
-                Set<AccessMask> accessMasks = new HashSet<>();
-                accessMasks.add(AccessMask.MAXIMUM_ALLOWED);
-
-                Set<FileAttributes> attributes = new HashSet<>();
-                attributes.add(FileAttributes.FILE_ATTRIBUTE_NORMAL);
-
-                Set<SMB2ShareAccess> shareAccesses = new HashSet<>();
-                shareAccesses.add(SMB2ShareAccess.FILE_SHARE_READ);
-                shareAccesses.add(SMB2ShareAccess.FILE_SHARE_WRITE);
-                SMB2CreateDisposition createDisposition = SMB2CreateDisposition.FILE_OPEN;
-
-                File file = diskShare.openFile(filename, accessMasks, attributes, shareAccesses, createDisposition, null);
+            try (SmbFile file = new SmbFile(url, context)) {
 
                 BufferedInputStream in = new BufferedInputStream(file.getInputStream());
-                Log.d("BENJI", "Buffered input stream opened");
 
-                Workbook workbook = new HSSFWorkbook(in);
-                Log.d("BENJI", "Workbook created");
+                try (Workbook workbook = new HSSFWorkbook(in)) {
+                    Log.d("BENJI", "Workbook created");
 
-                Sheet sheet = workbook.getSheetAt(0);
+                    Sheet sheet = workbook.getSheetAt(0);
 
-                for (Row row : sheet) {
-                    Cell cell = row.getCell(0, Row.RETURN_NULL_AND_BLANK);
+                    for (Row row : sheet) {
+                        Cell cell = row.getCell(0, Row.RETURN_NULL_AND_BLANK);
 
-                    if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
-                        double assetNumberInSheet = cell.getNumericCellValue();
-                        double assetNumberFromScan = Double.parseDouble(assetNumber);
+                        if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+                            double assetNumberInSheet = cell.getNumericCellValue();
+                            double assetNumberFromScan = Double.parseDouble(assetNumber);
 
-                        //We found an matching asset number in the sheet.
-                        if (assetNumberFromScan == assetNumberInSheet) {
-                            Log.d("BENJI", "Found matching asset number in sheet");
-                            Cell cellRoom = row.getCell(2, Row.RETURN_NULL_AND_BLANK);
-                            String roomNameInSheet = cellRoom.getStringCellValue();
-                            //We scanned from the room number we are in.
-                            CellStyle style = workbook.createCellStyle();
-                            style.cloneStyleFrom(cell.getCellStyle());
-                            style.setFillPattern(CellStyle.SOLID_FOREGROUND);
+                            //We found an matching asset number in the sheet.
+                            if (assetNumberFromScan == assetNumberInSheet) {
+                                Log.d("BENJI", "Found matching asset number in sheet");
+                                Cell cellRoom = row.getCell(2, Row.RETURN_NULL_AND_BLANK);
+                                String roomNameInSheet = cellRoom.getStringCellValue();
+                                //We scanned from the room number we are in.
+                                CellStyle style = workbook.createCellStyle();
+                                style.cloneStyleFrom(cell.getCellStyle());
+                                style.setFillPattern(CellStyle.SOLID_FOREGROUND);
 
-                            if (roomNumber.toUpperCase().equals(roomNameInSheet.toUpperCase())) {
-                                Log.d("BENJI", "We found the scanned item");
-                                style.setFillForegroundColor(IndexedColors.GREEN.getIndex());
+                                if (roomNumber.toUpperCase().equals(roomNameInSheet.toUpperCase())) {
+                                    Log.d("BENJI", "We found the scanned item");
+                                    style.setFillForegroundColor(IndexedColors.GREEN.getIndex());
+                                }
+                                //The item we scanned must be out of place.
+                                else {
+                                    Log.d("BENJI", "The item we scanned is out of place");
+                                    style.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+                                }
+                                //Set the new cell color.
+                                cell.setCellStyle(style);
+
+                                //Time to save the sheet.
+                                BufferedOutputStream out = new BufferedOutputStream(file.getOutputStream());
+                                workbook.write(out);
+                                Log.d("BENJI", "Workbook written");
+                                workbook.close();
+                                out.close();
+                                in.close();
+                                file.close();
+                                break;
                             }
-                            //The item we scanned must be out of place.
-                            else {
-                                Log.d("BENJI", "The item we scanned is out of place");
-                                style.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
-                            }
-                            //Set the new cell color.
-                            cell.setCellStyle(style);
-
-                            //Time to save the sheet.
-                            BufferedOutputStream out = new BufferedOutputStream(file.getOutputStream());
-                            workbook.write(out);
-                            Log.d("BENJI", "Workbook written");
-                            workbook.close();
-                            out.close();
-                            in.close();
-                            file.close();
-                            break;
                         }
                     }
-                }
-            }catch(SMBApiException e){
-                Log.e("BENJI", "File in use.");
-                return new String("File in use. Try again later.");
+                }catch(IOException e){
 
-            }catch(IOException e){
-                return new String("Connection error.");
+                }
+            }catch(MalformedURLException e){
+                message = "Wrong filename." + " malformed url exception";
+            }catch(SmbException e){
+                switch(e.getNtStatus()) {
+                    case SmbException.ERROR_ACCESS_DENIED:
+                    case SmbException.NT_STATUS_ACCESS_DENIED:
+                    case SmbException.NT_STATUS_CONNECTION_REFUSED:
+                        message = "Connection refused";
+                        break;
+                    case SmbException.NT_STATUS_FILE_IS_A_DIRECTORY:
+                        message = "Not a file";
+                        break;
+                    case SmbException.NT_STATUS_NOT_FOUND:
+                        message = "File not found";
+                        break;
+                    case SmbException.NT_STATUS_WRONG_PASSWORD:
+                        message = "Wrong password";
+                        break;
+                    case SmbException.NT_STATUS_NO_SUCH_DOMAIN:
+                        message = "No such domain";
+                        break;
+                    case SmbException.NT_STATUS_UNSUCCESSFUL:
+                        message = "Unsuccessful network connection" + " smb exception" + "Are you connected to WIFI?";
+                        break;
+                    default:
+                        message = e.getMessage() + " smb exception" + String.valueOf(e.getNtStatus());
+                }
             }
-            return new String("Success");
+            catch(IOException e){
+                message = e.getMessage() + " Could not create data stream";
+            }
+
+            return message;
         }
     }
 }

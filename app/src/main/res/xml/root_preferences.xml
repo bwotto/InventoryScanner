@@ -43,7 +43,7 @@
             app:title="Username"
             app:useSimpleSummaryProvider="true" />
         <EditTextPreference
-            app:key="passsword"
+            app:key="password"
             app:title="Password"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
