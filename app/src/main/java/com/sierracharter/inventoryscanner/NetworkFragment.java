@@ -27,16 +27,11 @@ import jcifs.context.SingletonContext;
 import jcifs.smb.NtlmPasswordAuthenticator;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
-import jcifs.smb.SmbFileInputStream;
 
 public class NetworkFragment extends Fragment {
-    public static final String TAG = "NetworkFragment";
+    private static final String TAG = "NetworkFragment";
 
-    private static String mRoomNumber = "";
-    private static String mAssetNumber = "";
-
-    private DownloadCallback mCallback;
-    private DownloadTask downloadTask;
+    private static DownloadCallback mCallback;
     private static NetworkFragment mNetworkFragment;
 
     /**
@@ -44,7 +39,7 @@ public class NetworkFragment extends Fragment {
      * from.
      */
 
-    public static NetworkFragment getInstance(FragmentManager supportFragmentManager) {
+    static NetworkFragment getInstance(FragmentManager supportFragmentManager) {
         if (mNetworkFragment == null) {
             mNetworkFragment = new NetworkFragment();
             supportFragmentManager.beginTransaction().add(mNetworkFragment, TAG).commit();
@@ -78,13 +73,13 @@ public class NetworkFragment extends Fragment {
         super.onDestroy();
     }
 
-    public void updateSheet(String mRoomNumber, String assetNumber, String host, String share, String filename, String domain, String username, String password) {
+    void updateSheet(String mRoomNumber, String assetNumber, String host, String share, String filename, String domain, String username, String password) {
         Log.e("BENJI", "start update sheet");
-        downloadTask = new DownloadTask();
+        DownloadTask downloadTask = new DownloadTask();
         downloadTask.execute(mRoomNumber, assetNumber, host, share, filename, domain, username, password);
     }
 
-    private class DownloadTask extends AsyncTask<String, Void, String> {
+    private static class DownloadTask extends AsyncTask<String, Void, String> {
 
         private boolean mRunning;
 
@@ -112,9 +107,7 @@ public class NetworkFragment extends Fragment {
             String username = strings[6];
             String password = strings[7];
 
-            String result = handleupdate(roomNumber, assetNumber, host, share, filename, domain, username, password);
-
-            return result;
+            return handleupdate(roomNumber, assetNumber, host, share, filename, domain, username, password);
         }
 
         @Override
@@ -185,7 +178,7 @@ public class NetworkFragment extends Fragment {
                         }
                     }
                 }catch(IOException e){
-
+                    e.printStackTrace();
                 }
             }catch(MalformedURLException e){
                 message = "Wrong filename." + " malformed url exception";
@@ -212,7 +205,7 @@ public class NetworkFragment extends Fragment {
                         message = "Unsuccessful network connection" + " smb exception" + "Are you connected to WIFI?";
                         break;
                     default:
-                        message = e.getMessage() + " smb exception" + String.valueOf(e.getNtStatus());
+                        message = e.getMessage() + " smb exception" + e.getNtStatus();
                 }
             }
             catch(IOException e){

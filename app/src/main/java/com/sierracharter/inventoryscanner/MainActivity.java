@@ -2,9 +2,9 @@ package com.sierracharter.inventoryscanner;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
@@ -14,28 +14,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.preference.PreferenceManager;
 
-import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.HashSet;
-import java.util.Set;
 
 public class MainActivity extends AppCompatActivity implements DownloadCallback{
 
@@ -127,7 +110,8 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
                 //The contents is a number.
                 if(scanContents.matches("[0-9]+")){
                     if(mRoomNumber.equals("")){
-                        Toast.makeText(this, "Scan a room number first", Toast.LENGTH_LONG).show();
+                        showMessage("Scan a room number first");
+                        Snackbar.make(findViewById(android.R.id.content), "Scan room first", Snackbar.LENGTH_LONG);
                     }
                     //Time to update sheet.
                     startUpdateSheet(mRoomNumber, scanContents, host, share, filePath, domain, username, password);
@@ -154,10 +138,6 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
     public void onStartedSheetUpdate(String result){
         ProgressBar bar = findViewById(R.id.progressBar);
         bar.setVisibility(View.VISIBLE);
-
-        if(result != null && !result.equals("Success")){
-            Toast.makeText(this, result, Toast.LENGTH_LONG).show();
-        }
     }
 
     @Override
@@ -166,7 +146,11 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
         bar.setVisibility(View.INVISIBLE);
 
         if(result != null){
-            Toast.makeText(this, result, Toast.LENGTH_LONG).show();
+            showMessage(result);
         }
+    }
+
+    private void showMessage(String message){
+        Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_LONG).show();
     }
 }
