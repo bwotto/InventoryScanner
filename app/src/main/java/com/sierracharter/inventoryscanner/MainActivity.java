@@ -7,6 +7,7 @@ import android.os.Bundle;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
+import com.sierracharter.smbfilechooser.FileChooserActivity;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.preference.PreferenceManager;
 
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,8 +24,11 @@ import android.widget.ProgressBar;
 
 public class MainActivity extends AppCompatActivity implements DownloadCallback{
 
+    private static final String TAG = "MainActivity";
+
     private String mRoomNumber = "";
     private NetworkFragment networkFragment;
+    private String filePathToSheet = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,6 +96,14 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
         if(data == null){
             return;
         }
+
+        //Process result of file choice.
+        if(resultCode == RESULT_OK && requestCode == FileChooserActivity.ACTION_PICK_FILE){
+            filePathToSheet = data.getStringExtra(FileChooserActivity.INTENT_RESULT);
+            Log.d(TAG, "chosen file: " + filePathToSheet);
+        }
+
+        //Process result of scan.
         IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
 
         if(result != null){
@@ -100,9 +113,9 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
 
                 SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-                String host = preferences.getString("host", "");
-                String share = preferences.getString("share", "");
-                String filePath = preferences.getString("file_path", "");
+//                String host = preferences.getString("host", "");
+//                String share = preferences.getString("share", "");
+//                String filePath = preferences.getString("file_path", "");
                 String domain = preferences.getString("domain", "");
                 String username = preferences.getString("username", "");
                 String password = preferences.getString("password", "");
@@ -113,7 +126,7 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
                         showMessage("Scan a room number first");
                     }
                     //Time to update sheet.
-                    startUpdateSheet(mRoomNumber, scanContents, host, share, filePath, domain, username, password);
+                    startUpdateSheet(mRoomNumber, scanContents, filePathToSheet, domain, username, password);
                 }
 
                 //The contents is a room number.
@@ -125,10 +138,10 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
         }
     }
 
-    private void startUpdateSheet(String mRoomNumber, String assetNumber, String host, String share, String filename, String domain, String username, String password){
+    private void startUpdateSheet(String mRoomNumber, String assetNumber,String filename, String domain, String username, String password){
         if(networkFragment != null){
             if(!assetNumber.equals("") && !mRoomNumber.equals("")){
-                networkFragment.updateSheet(mRoomNumber, assetNumber, host, share, filename, domain, username, password);
+                networkFragment.updateSheet(mRoomNumber, assetNumber, filename, domain, username, password);
             }
         }
     }
@@ -151,5 +164,21 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
 
     private void showMessage(String message){
         Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_LONG).show();
+    }
+
+    public void onChooseFile(View view){
+        Intent intent = new Intent(this, FileChooserActivity.class);
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String host = preferences.getString("host", "");
+        String share = preferences.getString("share", "");
+
+        if(host.equals("") || share.equals("")){
+            showMessage("You must set host and share in settings");
+            return;
+        }
+
+        String fullRootPath = "smb://" + host + "/" + share + "/";
+        intent.putExtra(FileChooserActivity.INTENT_ARGS, fullRootPath);
+        startActivityForResult(intent, FileChooserActivity.ACTION_PICK_FILE);
     }
 }

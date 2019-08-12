@@ -75,10 +75,10 @@ public class NetworkFragment extends Fragment {
         super.onDestroy();
     }
 
-    void updateSheet(String mRoomNumber, String assetNumber, String host, String share, String filename, String domain, String username, String password) {
+    void updateSheet(String mRoomNumber, String assetNumber, String filename, String domain, String username, String password) {
         Log.e("BENJI", "start update sheet");
         DownloadTask downloadTask = new DownloadTask();
-        downloadTask.execute(mRoomNumber, assetNumber, host, share, filename, domain, username, password);
+        downloadTask.execute(mRoomNumber, assetNumber, filename, domain, username, password);
     }
 
     private static class DownloadTask extends AsyncTask<String, Void, String> {
@@ -102,14 +102,12 @@ public class NetworkFragment extends Fragment {
             Log.d("BENJI", "do in background");
             String roomNumber = strings[0];
             String assetNumber = strings[1];
-            String host = strings[2];
-            String share = strings[3];
-            String filename = strings[4];
-            String domain = strings[5];
-            String username = strings[6];
-            String password = strings[7];
+            String filename = strings[2];
+            String domain = strings[3];
+            String username = strings[4];
+            String password = strings[5];
 
-            return handleupdate(roomNumber, assetNumber, host, share, filename, domain, username, password);
+            return handleupdate(roomNumber, assetNumber, filename, domain, username, password);
         }
 
         @Override
@@ -120,16 +118,14 @@ public class NetworkFragment extends Fragment {
             }
         }
 
-        private String handleupdate(String roomNumber, String assetNumber, String host, String share, String filename, String domain, String username, String password) {
+        private String handleupdate(String roomNumber, String assetNumber, String filename, String domain, String username, String password) {
 
             CIFSContext baseContext = SingletonContext.getInstance();
             CIFSContext context = baseContext.withCredentials(new NtlmPasswordAuthenticator(domain, username, password));
 
-            String url = "smb://" + host + "/" + share + "/" + filename;
-
             String message = "";
 
-            try (SmbFile file = new SmbFile(url, context)) {
+            try (SmbFile file = new SmbFile(filename, context)) {
 
                 BufferedInputStream in = new BufferedInputStream(file.getInputStream());
 
