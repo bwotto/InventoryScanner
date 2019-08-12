@@ -27,8 +27,8 @@
             app:title="Share"
             app:useSimpleSummaryProvider="true" />
         <EditTextPreference
-            app:key="file_path"
-            app:title="File path"
+            app:key="directory"
+            app:title="Directory"
             app:useSimpleSummaryProvider="true" />
 
     </PreferenceCategory>
