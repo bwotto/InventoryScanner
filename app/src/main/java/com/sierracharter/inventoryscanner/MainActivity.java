@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
 
         if(savedInstanceState != null){
             mRoomNumber = savedInstanceState.getString("room_number");
+            filePathToSheet = savedInstanceState.getString("url");
             ProgressBar progressBar = findViewById(R.id.progressBar);
             if(savedInstanceState.getBoolean("in_progress")){
                 progressBar.setVisibility(View.VISIBLE);
@@ -56,6 +57,8 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
         ProgressBar progressBar = findViewById(R.id.progressBar);
         boolean isVisible = progressBar.getVisibility() == View.VISIBLE;
         outState.putBoolean("in_progress", isVisible);
+
+        outState.putString("url", filePathToSheet);
     }
 
     @Override
