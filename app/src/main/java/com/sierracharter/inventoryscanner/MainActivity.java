@@ -21,6 +21,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ProgressBar;
 
+//Todo: handle case of asset number not found in sheet.
+//Todo: persist chosen file.
 
 public class MainActivity extends AppCompatActivity implements DownloadCallback{
 
@@ -180,8 +182,14 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
             return;
         }
 
-        String fullRootPath = "smb://" + host + "/" + share + "/";
-        intent.putExtra(FileChooserActivity.INTENT_ARGS, fullRootPath);
+        String username = preferences.getString("username", "");
+        String password = preferences.getString("password", "");
+        String directory = preferences.getString("directory", "");
+
+        String fullRootPath = "smb://" + host + "/" + share + "/" + directory + "/";
+        intent.putExtra(FileChooserActivity.INTENT_URL, fullRootPath);
+        intent.putExtra(FileChooserActivity.INTENT_USERNAME, username);
+        intent.putExtra(FileChooserActivity.INTENT_PASSWORD, password);
         startActivityForResult(intent, FileChooserActivity.ACTION_PICK_FILE);
     }
 }

@@ -135,7 +135,7 @@ public class NetworkFragment extends Fragment {
                     Sheet sheet = workbook.getSheetAt(0);
 
                     for (Row row : sheet) {
-                        Cell cell = row.getCell(0, Row.RETURN_NULL_AND_BLANK);
+                        Cell cell = row.getCell(0, Row.CREATE_NULL_AS_BLANK);
 
                         if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
                             double assetNumberInSheet = cell.getNumericCellValue();

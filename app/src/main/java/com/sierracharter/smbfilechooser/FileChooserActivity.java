@@ -28,24 +28,27 @@ public class FileChooserActivity extends ListActivity {
 
     private static final String TAG = "FileChooserActivity";
 
-    public static final String INTENT_ARGS = "url";
+    public static final String INTENT_URL = "url";
+    public static final String INTENT_USERNAME = "username";
+    public static final String INTENT_PASSWORD = "password";
     public static final int ACTION_PICK_FILE = 33;
     public static final String INTENT_RESULT = "result";
 
-    private ArrayAdapter arrayAdapter;
-    private MyTask myTask;
     private String startingPath;
-    private List listOfFilesFoundInDirectory = new ArrayList();
+    private String username;
+    private String password;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_file_chooser);
 
-        startingPath = getIntent().getStringExtra(INTENT_ARGS);
+        startingPath = getIntent().getStringExtra(INTENT_URL);
+        username = getIntent().getStringExtra(INTENT_USERNAME);
+        password = getIntent().getStringExtra(INTENT_PASSWORD);
 
-        myTask = new MyTask();
-        myTask.execute(startingPath);
+        MyTask myTask = new MyTask();
+        myTask.execute(startingPath, username, password);
     }
 
     @Override
@@ -58,7 +61,9 @@ public class FileChooserActivity extends ListActivity {
         if(chosenFile.endsWith("/")){
             String fullPath = startingPath + chosenFile;
             Intent intent = new Intent(this, FileChooserActivity.class);
-            intent.putExtra(INTENT_ARGS, fullPath);
+            intent.putExtra(INTENT_URL, fullPath);
+            intent.putExtra(INTENT_USERNAME, username);
+            intent.putExtra(INTENT_PASSWORD, password);
             startActivityForResult(intent, ACTION_PICK_FILE);
             //This is a file.
         }else{
@@ -78,9 +83,12 @@ public class FileChooserActivity extends ListActivity {
             List listOfPathsToReturn = new ArrayList();
 
             String dir = strings[0];
+            String username = strings[1];
+            String password = strings[2];
 
             CIFSContext baseContext = SingletonContext.getInstance();
-            CIFSContext context = baseContext.withCredentials(new NtlmPasswordAuthenticator("Benji", "attimn1em"));
+            CIFSContext context = baseContext.withCredentials(
+                    new NtlmPasswordAuthenticator(username, password));
 
             try(SmbFile file = new SmbFile(dir, context)){
 
@@ -100,11 +108,11 @@ public class FileChooserActivity extends ListActivity {
                     return listOfPathsToReturn;
 
                 }catch(SmbException e){
-                    e.printStackTrace();
+                    Log.d(TAG, "SmbException: " + e);
                 }
 
             }catch(MalformedURLException e){
-                e.printStackTrace();
+                Log.d(TAG, "Malformed url exception" + e);
             }
             return null;
         }
@@ -112,15 +120,20 @@ public class FileChooserActivity extends ListActivity {
         @Override
         protected void onPostExecute(List list) {
             if(list != null){
-                listOfFilesFoundInDirectory = new ArrayList(list);
-                arrayAdapter = new ArrayAdapter(FileChooserActivity.this, android.R.layout.simple_list_item_2, android.R.id.text2, listOfFilesFoundInDirectory);
+                Log.d(TAG, "on post execute");
+                List listOfFilesFoundInDirectory = new ArrayList(list);
+
+                ArrayAdapter arrayAdapter = new ArrayAdapter(FileChooserActivity.this,
+                        android.R.layout.simple_list_item_2, android.R.id.text2,
+                        listOfFilesFoundInDirectory);
+
                 ListView listView = getListView();
                 listView.setAdapter(arrayAdapter);
             }
         }
     }
 
-    private class MyFilter implements SmbFilenameFilter {
+    private static class MyFilter implements SmbFilenameFilter {
 
         @Override
         public boolean accept(SmbFile dir, String name) throws SmbException {
@@ -128,7 +141,8 @@ public class FileChooserActivity extends ListActivity {
                 return false;
             }
 
-            String[] undesiredFileExtensions = {".xlsx", ".bmp", ".png", ".jpg", "jpeg", ".doc", ".docx", ".txt"};
+            String[] undesiredFileExtensions = {".xlsx", ".bmp", ".png", ".jpg",
+                    "jpeg", ".doc", ".docx", ".txt"};
 
             for(String ext : undesiredFileExtensions){
                 if(name.endsWith(ext)){
