@@ -2,9 +2,7 @@ package com.sierracharter.smbfilechooser;
 
 
 import android.app.ListActivity;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,13 +10,12 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import com.sierracharter.inventoryscanner.R;
+import com.sierracharter.inventoryscanner2.R;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.prefs.Preferences;
 
 import jcifs.CIFSContext;
 import jcifs.context.SingletonContext;

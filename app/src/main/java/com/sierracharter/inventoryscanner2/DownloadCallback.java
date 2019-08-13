@@ -1,4 +1,4 @@
-package com.sierracharter.inventoryscanner;
+package com.sierracharter.inventoryscanner2;
 
 public interface DownloadCallback{
 
