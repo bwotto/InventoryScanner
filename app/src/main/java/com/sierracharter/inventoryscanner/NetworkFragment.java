@@ -135,9 +135,13 @@ public class NetworkFragment extends Fragment {
                     Sheet sheet = workbook.getSheetAt(0);
 
                     for (Row row : sheet) {
-                        Cell cell = row.getCell(0, Row.CREATE_NULL_AS_BLANK);
+                        Cell cell = row.getCell(0, Row.RETURN_BLANK_AS_NULL);
 
-                        if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+                        if(cell == null){
+                            message = "Could not find asset number";
+                        }
+
+                        else if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
                             double assetNumberInSheet = cell.getNumericCellValue();
                             double assetNumberFromScan = Double.parseDouble(assetNumber);
 

@@ -1,7 +1,9 @@
 package com.sierracharter.inventoryscanner;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -15,6 +17,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.preference.PreferenceManager;
 
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -89,6 +93,12 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
     }
 
     public void onScanButtonPressed(View view){
+        if(filePathToSheet.equals("")) {
+            vibrate();
+            showMessage("Need to select a file first.");
+            return;
+        }
+
         IntentIntegrator intentIntegrator = new IntentIntegrator(this);
         intentIntegrator.setOrientationLocked(false);
         intentIntegrator.initiateScan();
@@ -127,9 +137,12 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
 
                 //The contents is a number.
                 if(scanContents.matches("[0-9]+")){
+
                     if(mRoomNumber.equals("")){
-                        showMessage("Scan a room number first");
+                        vibrate();
+                        showMessage("Must scan room number first");
                     }
+
                     //Time to update sheet.
                     startUpdateSheet(mRoomNumber, scanContents, filePathToSheet, domain, username, password);
                 }
@@ -161,14 +174,27 @@ public class MainActivity extends AppCompatActivity implements DownloadCallback{
     public void onFinishedSheetUpdate(String result){
         ProgressBar bar = findViewById(R.id.progressBar);
         bar.setVisibility(View.INVISIBLE);
-
-        if(result != null && !equals("")){
-            showMessage(result);
+        if(result.equals("Could not find asset number")){
+            Vibrator vibrator = (Vibrator)getSystemService(VIBRATOR_SERVICE);
+            vibrator.vibrate(1000);
         }
+        showMessage(result);
     }
 
     private void showMessage(String message){
+        if(message != null && !message.equals(""))
         Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_LONG).show();
+    }
+
+    private void vibrate(){
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        // Vibrate for 500 milliseconds
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            v.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE));
+        } else {
+            //deprecated in API 26
+            v.vibrate(500);
+        }
     }
 
     public void onChooseFile(View view){
